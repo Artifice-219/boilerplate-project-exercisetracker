@@ -13,7 +13,8 @@ app.get('/', (req, res) => {
 });
 
 // in memory storage
-const users = []
+let users = []
+let exercises = []
 
 function generateId(){
   let result = ''
@@ -51,6 +52,43 @@ app.get('/api/users', (req, res) => {
   }
 
   res.status(200).json(users)
+})
+
+
+app.post('/api/users/:_id/exercises', (req,res) => {
+  let id = req.params._id;
+  let description = req.body.description;
+  let duration = parseInt(req.body.duration);
+  let date = req.body.date
+
+  //have a default value if no date is provide
+  // specifies the default date value
+  let defaultDate = new Date()
+  let formattedDate = defaultDate.toLocaleString('en-us', {
+    weekday : 'short',
+    month : 'short',
+    day : '2-digit',
+    year : 'numeric'
+  })
+  date = date || formattedDate;
+  // search for the user first
+  const foundUser = users.find(user => user._id === id)
+  // if the user is found add the exercise details as an additional fields to the user object
+  if(foundUser){
+    Object.assign(foundUser, { description , duration, date})
+    // return the foundUser object as a json response
+    return res.json({
+      username : foundUser.username,
+      description : foundUser.description,
+      duration : foundUser.duration,
+      date : foundUser.date,
+      _id : foundUser._id
+    })
+  }
+  else{
+    return res.status(404).json({message : 'User cant be found'})
+  }
+
 })
 
 

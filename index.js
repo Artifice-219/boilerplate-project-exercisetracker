@@ -91,6 +91,18 @@ app.post('/api/users/:_id/exercises', (req,res) => {
 
 })
 
+app.get('/api/users/:_id/logs', (req, res) => {
+  // You can make a GET request to /api/users/:_id/logs to retrieve a full exercise log of any user.
+  // search for the user first
+  const targetID = req.params._id
+
+  const foundUser = users.find( user => user.id = targetID);
+  if(foundUser){
+    // return the exercise log of any user matching with the requested id
+    return res.json(foundUser)
+  }
+})
+
 
 
 

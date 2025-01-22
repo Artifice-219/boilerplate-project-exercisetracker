@@ -3,6 +3,7 @@ const app = express()
 const cors = require('cors')
 require('dotenv').config()
 const bodyParser = require('body-parser')
+const { parse } = require('dotenv')
 
 app.use(cors())
 app.use(express.static('public'))
@@ -70,7 +71,12 @@ app.post('/api/users/:_id/exercises', (req,res) => {
     day : '2-digit',
     year : 'numeric'
   })
-  date = date || formattedDate;
+
+  // this the date format for the final test revert if something broke
+  const testDate  = new Date().toISOString().split('T')[0]
+
+  // date = date || formattedDate;
+  date = date || testDate
   // create an exercise object along with a userId field
   const exerciseObj = {userId : id, description, duration, date}
   // push that exerciseObj to the exercises[]
@@ -99,6 +105,7 @@ app.post('/api/users/:_id/exercises', (req,res) => {
 // GET /api/users/:_id/logs
 app.get('/api/users/:_id/logs', (req, res) =>{
   const targetID = req.params._id;
+  const {from, to, limit} = req.query
   // find the user first
   const foundUser = users.find(user => user._id === targetID)
   if(!foundUser){
@@ -114,14 +121,32 @@ app.get('/api/users/:_id/logs', (req, res) =>{
       log: [],
     });
   }
+
+  // getting the filterede exercises from the userExercises
+  let filteredExercises = userExercises
+  if(from){
+    const fromDate = new Date(from)
+    filteredExercises = filteredExercises.filter(exercise => new Date(exercise.date) >= fromDate)
+
+  }
+  if(to){
+    const toDate = new Date(to)
+    filteredExercises = filteredExercises.filter(exercise => new Date(exercise.date) <= toDate)
+  }
   const exercisesCount = userExercises.length
 
+  if(limit){
+    const parsedLimit = parseInt(limit, 10)
+    if(!isNaN(parsedLimit) && parsedLimit > 0){
+      filteredExercises = filteredExercises.slice(0, parsedLimit)
+    }
+  }
   // building the response
   const toResponse = {
     username : foundUser.username,
-    count : exercisesCount,
+    count : filteredExercises.length,
     _id : targetID,
-    log : userExercises.map(exercise => ({
+    log : filteredExercises.map(exercise => ({
       description : exercise.description,
       duration : exercise.duration,
       date : new Date(exercise.date).toDateString()
@@ -130,7 +155,6 @@ app.get('/api/users/:_id/logs', (req, res) =>{
 
   return res.json(toResponse)
 })
-
 
 
 const listener = app.listen(process.env.PORT || 3000, () => {
